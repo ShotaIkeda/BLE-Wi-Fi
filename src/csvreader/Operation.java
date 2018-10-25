@@ -45,21 +45,49 @@ public class Operation {
 					//dono heya?
 		        	String bleroomid=detectRoomByBLE(o.blelist,blemap);
 		        	String wifiroomid=detectRoomByWifi(o.wifilist,wifimap);
-		        	//System.out.println(bleroomid+","+wifiroomid);
+		        	//
+		        	
+		        	//System.out.println("AAA"+bleroomid+","+wifiroomid);
+		        	
+		        	if(bleroomid.equals(wifiroomid)){
+		        		WriteRoomModel wrm = new WriteRoomModel(bleroomid,o);
+		        		System.out.println(bleroomid);
+		        	}else{
+		        		TreeMap<String, ArrayList<Observation>> admap2 = new TreeMap<>();
+		        		ArrayList<Observation> obserList = new ArrayList<>();
+		        		obserList.add(o);
+		        		admap2.put(room, obserList);
+		        		
+		        		ErrorDitection2 ed2 = new ErrorDitection2();
+		    			ed2.setData(blemap,wifimap,admap2,boundary);
+		    			ed2.Ditection();
+		    			ed2.disp();
+		    			
+		    			compMoveHereMap = ed2.getMoveHereMap();
+		        		compMoveToSomewhereMap = ed2.getMoveToSomewhere();
+		        		errorMoveHereDateMap = ed2.getErrorMoveHereDate();
+		        		errorMoveToSomewhereDateMap = ed2.getErrorMoveToSomewhereDate();
+		        				        		
+		        		AutoUpdateModel aum = new AutoUpdateModel();
+		        		aum.setErrorData(compMoveHereMap,compMoveToSomewhereMap);
+		        		aum.selectProcess(wifiroomid,o);
+		        		
+		        	}
 				}
 			}
+			/*
 			ErrorDitection2 ed2 = new ErrorDitection2();
     		ed2.setData(blemap,wifimap,admap,boundary);
     		ed2.Ditection();
     		ed2.disp();
     		
-    		autoUpdateModel aum = new autoUpdateModel();
-    		
-    		
     		compMoveHereMap = ed2.getMoveHereMap();
     		compMoveToSomewhereMap = ed2.getMoveToSomewhere();
     		errorMoveHereDateMap = ed2.getErrorMoveHereDate();
     		errorMoveToSomewhereDateMap = ed2.getErrorMoveToSomewhereDate();
+    		*/
+    		
+    		//autoUpdateModel aum = new autoUpdateModel();
     		
     		//WriteRoomModel wr = new WriteRoomModel(admap);
 	   }
