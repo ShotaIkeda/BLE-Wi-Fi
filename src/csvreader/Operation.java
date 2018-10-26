@@ -3,6 +3,7 @@ package csvreader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
+import java.io.*;
 
 public class Operation {
 	static TreeMap<String,ArrayList<String>> compMoveHereMap;
@@ -42,57 +43,80 @@ public class Operation {
 				String room=ite.next();
 				for(int i=0;i<admap.get(room).size();i++){
 					Observation o=admap.get(room).get(i);
+					
+					File check = new File("checkData.txt");
+					String str = "";
+					if(check.exists()){
+						BufferedReader br = new BufferedReader(new FileReader(check));
+						str = br.readLine();
+						//System.out.println(str);
+					}
+					//System.out.println(o.datetime.substring(5,7)+","+o.datetime.substring(8,10));
+					
+					if(fileCheck()){
+						if(Integer.parseInt(str.substring(5, 7)) >= Integer.parseInt(o.datetime.substring(5,7))){
+							if(Integer.parseInt(str.substring(8,10)) > Integer.parseInt(o.datetime.substring(8,10))){
+								break;
+							}
+						}	
+					}
+					
 					//dono heya?
 		        	String bleroomid=detectRoomByBLE(o.blelist,blemap);
 		        	String wifiroomid=detectRoomByWifi(o.wifilist,wifimap);
 		        	//
-		        	
-		        	//System.out.println("AAA"+bleroomid+","+wifiroomid);
-		        	
+		        			        	
 		        	if(bleroomid.equals(wifiroomid)){
 		        		WriteRoomModel wrm = new WriteRoomModel(bleroomid,o);
-		        		System.out.println(bleroomid);
 		        	}else{
 		        		TreeMap<String, ArrayList<Observation>> admap2 = new TreeMap<>();
 		        		ArrayList<Observation> obserList = new ArrayList<>();
 		        		obserList.add(o);
 		        		admap2.put(room, obserList);
 		        		
+		        		//観測データ1行ごとに不具合推定
 		        		ErrorDitection2 ed2 = new ErrorDitection2();
 		    			ed2.setData(blemap,wifimap,admap2,boundary);
 		    			ed2.Ditection();
 		    			ed2.disp();
 		    			
+		    			//UIに表示
 		    			compMoveHereMap = ed2.getMoveHereMap();
 		        		compMoveToSomewhereMap = ed2.getMoveToSomewhere();
 		        		errorMoveHereDateMap = ed2.getErrorMoveHereDate();
 		        		errorMoveToSomewhereDateMap = ed2.getErrorMoveToSomewhereDate();
-		        				        		
+		        		
+		        		//自動更新プロセス
 		        		AutoUpdateModel aum = new AutoUpdateModel();
 		        		aum.setErrorData(compMoveHereMap,compMoveToSomewhereMap);
-		        		aum.selectProcess(wifiroomid,o);
+		        		aum.selectProcess(bleroomid,o);
 		        		
 		        	}
+		        	checkData(o);
 				}
 			}
-			/*
-			ErrorDitection2 ed2 = new ErrorDitection2();
-    		ed2.setData(blemap,wifimap,admap,boundary);
-    		ed2.Ditection();
-    		ed2.disp();
-    		
-    		compMoveHereMap = ed2.getMoveHereMap();
-    		compMoveToSomewhereMap = ed2.getMoveToSomewhere();
-    		errorMoveHereDateMap = ed2.getErrorMoveHereDate();
-    		errorMoveToSomewhereDateMap = ed2.getErrorMoveToSomewhereDate();
-    		*/
-    		
-    		//autoUpdateModel aum = new autoUpdateModel();
-    		
-    		//WriteRoomModel wr = new WriteRoomModel(admap);
 	   }
 	   
-	   public static BLEModel generateBLEModel(ArrayList<Observation> olist){
+	public static boolean fileCheck(){
+		File file = new File("checkData.txt");
+		if(file.exists()){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	   
+	public static void checkData(Observation o) {
+		File check = new File("checkData.txt");
+		try{
+			FileWriter fw = new FileWriter(check);
+			fw.write(o.datetime);
+			fw.close();
+		}catch(Exception e){
+		}
+	}
+
+	public static BLEModel generateBLEModel(ArrayList<Observation> olist){
 		   BLEModel bm = new BLEModel();
 		   TreeMap<String,Integer> countmap = new TreeMap<String,Integer>();
 		   TreeMap<String,ArrayList<Integer>> rssimap = new TreeMap<String,ArrayList<Integer>>();

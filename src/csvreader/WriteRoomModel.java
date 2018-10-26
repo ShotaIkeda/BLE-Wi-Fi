@@ -2,7 +2,6 @@ package csvreader;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 public class WriteRoomModel {
@@ -14,8 +13,6 @@ public class WriteRoomModel {
 
 	public WriteRoomModel(String roomName, Observation o) {
 
-		//System.out.println("Oh");
-		
 		if (roomName.equals("RoomA")) {
 			SQL = "INSERT INTO  `room1`(`date`, `roomid`, `bleobservation`, `wifiobservation`)  VALUES (?,?,?,?)";
 		} else if (roomName.equals("RoomB")) {
@@ -27,7 +24,7 @@ public class WriteRoomModel {
 		} else {
 			return;
 		}
-		
+
 		try (Connection connection = DriverManager.getConnection(url, user, pass);
 				PreparedStatement statement = connection.prepareStatement(SQL);) {
 			connection.setAutoCommit(false);
@@ -39,7 +36,7 @@ public class WriteRoomModel {
 			statement.addBatch();
 			System.out.println(statement.toString());
 
-			//System.out.println("erro");
+			// System.out.println("erro");
 			// 以下確認用プログラム
 
 			try {
