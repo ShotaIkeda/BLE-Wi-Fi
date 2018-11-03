@@ -8,6 +8,7 @@ import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.Timer;
 import java.io.*;
+import java.text.SimpleDateFormat;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -29,6 +30,14 @@ public class Main extends JFrame implements ActionListener {
 	JButton buttonB = new JButton("RoomB");
 	JButton buttonC = new JButton("RoomC");
 	JButton buttonD = new JButton("RoomD");
+
+	int interval = 10000;
+	Operation o = new Operation();
+
+	SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+	Date date_moveHere;
+	Date date_moveToSomewhere;
 
 	public static void main(String args[]) throws Exception {
 		Main frame = new Main("BLE Defects Detection");
@@ -91,7 +100,7 @@ public class Main extends JFrame implements ActionListener {
 
 		Timer timer = new Timer();
 		TimerTask timertask = new MyTimerTask(this);
-		timer.scheduleAtFixedRate(timertask, 1000, 10000);
+		timer.scheduleAtFixedRate(timertask, 0, interval);
 	}
 
 	public void Update() {
@@ -101,7 +110,7 @@ public class Main extends JFrame implements ActionListener {
 			TreeMap<String, ArrayList<String>> moveToSomewhereDispMap;
 			TreeMap<String, String> errorMoveHereDateMap;
 			TreeMap<String, String> errorMoveToSomewhereDateMap;
-			Operation o = new Operation();
+			o.RunOperation();
 			moveHereDispMap = o.getCompMoveHereMap();
 			moveToSomewhereDispMap = o.getCompMoveToSomewhereMap();
 			errorMoveHereDateMap = o.getErrorMoveHereDate();
@@ -111,7 +120,6 @@ public class Main extends JFrame implements ActionListener {
 				tableModel.setValueAt("異常なし", i, 1);
 				tableModel.setValueAt("異常なし", i, 2);
 			}
-
 			try {
 				Iterator<String> it1 = moveHereDispMap.keySet().iterator();
 				while (it1.hasNext()) {
@@ -121,41 +129,43 @@ public class Main extends JFrame implements ActionListener {
 						if (key.equals(data[i][0])) {
 							ArrayList<String> moveHereDispList = moveHereDispMap.get(key);
 							for (int j = 0; j < moveHereDispList.size(); j++) {
-								if (j == 0) {
-									defect_label1 = "<html><font color=" + "RED" + ">"
-											+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
-											+ moveHereDispList.get(j).substring(37, 41) + "</font><html>";
+								Date date = fmt.parse(errorMoveHereDateMap.get(moveHereDispList.get(j)));
+								Date compDate = fmt.parse(fmt.format(new Date()));
+
+								long dateTimeTo = date.getTime();
+								long dateTimeFrom = compDate.getTime();
+								long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
+
+								if (dayDiff > 2) {
+									if (j == 0) {
+										defect_label1 = "<html><font color=" + "RED" + ">"
+												+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
+												+ moveHereDispList.get(j).substring(37, 41) + "</font><html>";
+									} else {
+										defect_label1 = "<html><font color=" + "RED" + ">" + defect_label1 + "<br>"
+												+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
+												+ moveHereDispList.get(j).substring(37, 41) + "<html>";
+									}
 								} else {
-									defect_label1 = "<html><font color=" + "RED" + ">" + defect_label1 + "<br>"
-											+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
-											+ moveHereDispList.get(j).substring(37, 41) + "<html>";
+									if (j == 0) {
+										defect_label1 = "<html><font color=" + "BLUE" + ">"
+												+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
+												+ moveHereDispList.get(j).substring(37, 41) + "</font><html>";
+									} else {
+										defect_label1 = "<html><font color=" + "BLUE" + ">" + defect_label1 + "<br>"
+												+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
+												+ moveHereDispList.get(j).substring(37, 41) + "<html>";
+									}
 								}
 							}
-							File moveHere = new File(i + "moveHere.txt");
-							FileWriter fw = new FileWriter(moveHere);
-							fw.write(defect_label1);
-							fw.close();
 							tableModel.setValueAt(defect_label1, i, 1);
 						}
 					}
 				}
 			} catch (NullPointerException e) {
-				String label = "";
-				for (int i = 0; i < data.length; i++) {
-					File error = new File(i+"moveHere.txt");
-					if(error.exists()){
-						BufferedReader br = new BufferedReader(new FileReader(error));
-						String str = "";
-						while ((str = br.readLine()) != null) {
-							label = label + str;
-						}
-					}else{
-						label = "異常なし";
-					}
-					tableModel.setValueAt(label, i, 1);
-				}
 
 			}
+
 			try {
 				Iterator<String> it2 = moveToSomewhereDispMap.keySet().iterator();
 				while (it2.hasNext()) {
@@ -165,39 +175,47 @@ public class Main extends JFrame implements ActionListener {
 						if (key.equals(data[i][0])) {
 							ArrayList<String> moveToSomewhereDispList = moveToSomewhereDispMap.get(key);
 							for (int j = 0; j < moveToSomewhereDispList.size(); j++) {
-								if (j == 0) {
-									defect_label2 = "<html><font color=" + "RED" + ">"
-											+ errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j)) + "　ビーコン:"
-											+ moveToSomewhereDispList.get(j).substring(37, 41) + "</font><html>";
+								Date date = fmt.parse(errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j)));
+								Date compDate = fmt.parse(fmt.format(new Date()));
+
+								long dateTimeTo = date.getTime();
+								long dateTimeFrom = compDate.getTime();
+								long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
+
+								if (dayDiff > 2) {
+
+									if (j == 0) {
+										defect_label2 = "<html><font color=" + "RED" + ">"
+												+ errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j))
+												+ "　ビーコン:" + moveToSomewhereDispList.get(j).substring(37, 41)
+												+ "</font><html>";
+									} else {
+										defect_label2 = "<html>" + defect_label2 + "<br>" + "<font color=" + "RED" + ">"
+												+ errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j))
+												+ "　ビーコン:" + moveToSomewhereDispList.get(j).substring(37, 41)
+												+ "</font><html>";
+									}
 								} else {
-									defect_label2 = "<html>" + defect_label2 + "<br>" + "<font color=" + "RED" + ">"
-											+ errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j)) + "　ビーコン:"
-											+ moveToSomewhereDispList.get(j).substring(37, 41) + "</font><html>";
+
+									if (j == 0) {
+										defect_label2 = "<html><font color=" + "BLUE" + ">"
+												+ errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j))
+												+ "　ビーコン:" + moveToSomewhereDispList.get(j).substring(37, 41)
+												+ "</font><html>";
+									} else {
+										defect_label2 = "<html>" + defect_label2 + "<br>" + "<font color=" + "BLUE"
+												+ ">" + errorMoveToSomewhereDateMap.get(moveToSomewhereDispList.get(j))
+												+ "　ビーコン:" + moveToSomewhereDispList.get(j).substring(37, 41)
+												+ "</font><html>";
+									}
 								}
 							}
-							File moveToSomewhere = new File(i + "moveToSomewhere.txt");
-							FileWriter fw = new FileWriter(moveToSomewhere);
-							fw.write(defect_label2);
-							fw.close();
 							tableModel.setValueAt(defect_label2, i, 2);
 						}
 					}
 				}
 			} catch (NullPointerException e) {
-				String label = "";
-				for (int i = 0; i < data.length; i++) {
-					File error = new File(i+"moveToSomewhere.txt");
-					if(error.exists()){
-						BufferedReader br = new BufferedReader(new FileReader(error));
-						String str = "";
-						while ((str = br.readLine()) != null) {
-							label = label + str;
-						}
-					}else{
-						label = "異常なし";
-					}
-					tableModel.setValueAt(label, i, 2);
-				}
+
 			}
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block

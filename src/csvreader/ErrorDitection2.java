@@ -469,19 +469,19 @@ public class ErrorDitection2 {
         while (it2.hasNext()) {
             String key = it2.next();
             moveToSomewhereDispList.add("\n"+key+":"+compMoveToSomewhereMap.get(key));
-            System.out.println(key+","+compMoveToSomewhereMap.get(key));
+            //System.out.println(key+","+compMoveToSomewhereMap.get(key));
         }
         Iterator<String> it4 = errorMoveHereDateMap.keySet().iterator();
         while (it4.hasNext()) {
             String key = it4.next();
             
-            System.out.println(key+","+errorMoveHereDateMap.get(key));
+            //System.out.println(key+","+errorMoveHereDateMap.get(key));
         }
         Iterator<String> it3 = errorMoveToSomewhereDateMap.keySet().iterator();
         while (it3.hasNext()) {
             String key = it3.next();
             
-            System.out.println(key+","+errorMoveToSomewhereDateMap.get(key));
+            //System.out.println(key+","+errorMoveToSomewhereDateMap.get(key));
         }
 		
 		System.out.println("別部屋から移動してきてた可能性のあるBLEビーコン:"+moveHereDispList);

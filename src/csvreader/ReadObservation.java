@@ -20,7 +20,7 @@ public class ReadObservation {
 				Statement stmt = con.createStatement();
 				ResultSet rs = stmt.executeQuery(SQL);) {
 			while (rs.next()) {
-				System.out.println(rs.getString("bleobservation"));
+				//System.out.println(rs.getString("bleobservation"));
 				Observation o = new Observation();
 			    // olist.add(o);
 			    o.setBLEObservation(rs.getString("bleobservation"));

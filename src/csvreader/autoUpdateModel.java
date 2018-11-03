@@ -1,7 +1,9 @@
 package csvreader;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -14,19 +16,26 @@ public class AutoUpdateModel {
 	static TreeMap<String, String> errorMoveToSomewhereDateMap;
 	static Observation o;
 	static String room = "";
+	static String wifiRoom = "";
+
+	static SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
 	AutoUpdateModel() {
 	}
 
-	public void selectProcess(String room, Observation o) throws IOException {
+	public void selectProcess(String room, String wifiRoom, Observation o) throws IOException {
 		this.o = o;
-		this.room = room;
+
+		if (room.isEmpty()) {
+			this.room = wifiRoom;
+		} else {
+			this.room = room;
+		}
 
 		// メンテナンス情報があるか
 		boolean bl = checkMentenanceFile();
 		if (bl == true) {
 			newCreateModel();
-			logFileWrite();
 			System.out.println("a");
 		} else {
 			standByProcessing();
@@ -35,10 +44,9 @@ public class AutoUpdateModel {
 	}
 
 	public static void newCreateModel() {
-		String room = "";
 		try {
 			File file = new File("mentenanceRoom.txt");
-			File file_SaveData = new File("saveData.txt");
+			File file_SaveData = new File(room + "waitProcess.txt");
 
 			FileReader filereader = new FileReader(file);
 			boolean bl = checkSaveFile();
@@ -66,10 +74,13 @@ public class AutoUpdateModel {
 				}
 			}
 			// モデルに書き込み
+			System.out.println("書き込み");
 			WriteRoomModel wm = new WriteRoomModel(room, o);
+
 			filereader.close();
-		} catch (IOException ex) {
-			ex.printStackTrace();
+			logFileWrite();
+		} catch (Exception e) {
+			System.out.println(e.toString());
 		}
 	}
 
@@ -116,9 +127,42 @@ public class AutoUpdateModel {
 		}
 	}
 
+	public static void checkError() {
+		try {
+			File errorFile = new File(room + "waitProcess.txt");
+			BufferedReader br = new BufferedReader(new FileReader(errorFile));
+			String str = "";
+			StringTokenizer token;
+			Date date = fmt.parse(fmt.format(new Date()));
+
+			while ((str = br.readLine()) != null) {
+				token = new StringTokenizer(str, ",");
+				Date errorDate = fmt.parse(token.nextToken());
+
+				long dateTimeTo = errorDate.getTime();
+				long dateTimeFrom = date.getTime();
+				long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
+
+				if (dayDiff > 2) {
+					FileWriter fw = new FileWriter(new File(room + "tmpError.txt"), true);
+					fw.write(str);
+				}
+			}
+
+			File file = new File(room + "tmpError.txt");
+			if(file.exists()){
+				file.renameTo(errorFile);
+			}
+		} catch (Exception e) {
+			System.out.println(e.toString());
+		}
+	}
+
 	public static void writeWaitProcess() {
+		checkError();
 		try {
 			File waitProcess = new File(room + "waitProcess.txt");
+			System.out.println("writeFile");
 			FileWriter fw = new FileWriter(waitProcess, true);
 			fw.write(o.datetime + "," + room + "," + o.bleObservation + "," + o.wifiObservation + "\n");
 			fw.close();
@@ -162,22 +206,10 @@ public class AutoUpdateModel {
 				}
 
 			}
-			be.write(str1+"\n"+str2);
+			be.write(str1 + "\n" + str2);
 			be.close();
 		} catch (IOException e) {
 
-		}
-	}
-
-	public static boolean checkErrorDelete() {
-		File file = new File(room + "errorDelete.txt");
-		if (file.exists()) {
-			// エラー状況の比較
-
-			return true;
-		} else {
-
-			return false;
 		}
 	}
 
@@ -196,6 +228,18 @@ public class AutoUpdateModel {
 			System.out.println(e.toString());
 		}
 		file.delete();
+	}
+
+	public static boolean checkErrorDelete() {
+		File file = new File(room + "errorDelete.txt");
+		if (file.exists()) {
+			// エラー状況の比較
+
+			return true;
+		} else {
+
+			return false;
+		}
 	}
 
 	public static boolean checkWaitProcess() {
@@ -220,7 +264,7 @@ public class AutoUpdateModel {
 
 	public static boolean checkSaveFile() {
 		// ファイルチェック
-		File file = new File("SaveDate.txt");
+		File file = new File(room + "waitProcess.txt");
 		if (file.exists()) {
 			return true;
 		} else {

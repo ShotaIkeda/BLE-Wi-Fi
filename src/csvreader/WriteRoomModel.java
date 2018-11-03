@@ -12,7 +12,7 @@ public class WriteRoomModel {
 	String SQL;
 
 	public WriteRoomModel(String roomName, Observation o) {
-
+		System.out.println("開始");
 		if (roomName.equals("RoomA")) {
 			SQL = "INSERT INTO  `room1`(`date`, `roomid`, `bleobservation`, `wifiobservation`)  VALUES (?,?,?,?)";
 		} else if (roomName.equals("RoomB")) {
@@ -36,6 +36,9 @@ public class WriteRoomModel {
 			statement.addBatch();
 			System.out.println(statement.toString());
 
+			
+			int[] result = statement.executeBatch();
+			System.out.println("登録：" + result.length + "件");
 			// System.out.println("erro");
 			// 以下確認用プログラム
 
@@ -49,7 +52,7 @@ public class WriteRoomModel {
 			}
 			//
 		} catch (Exception e) {
-			System.out.println("Oh");
+			System.out.println(e.toString());
 		}
 	}
 }
