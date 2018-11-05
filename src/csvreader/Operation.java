@@ -15,8 +15,10 @@ public class Operation {
 	
 	SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 	Date date;
-
-	public Operation(){
+	static int dateInterval;
+	
+	public Operation(int dateInterval){
+		this.dateInterval = dateInterval;
 	}
 	
 	public void RunOperation() throws Exception {
@@ -69,8 +71,7 @@ public class Operation {
 				//
 				
 				System.out.println(bleroomid + "," + wifiroomid);
-				
-				
+
 				TreeMap<String, ArrayList<Observation>> admap2 = new TreeMap<>();
 				ArrayList<Observation> obserList = new ArrayList<>();
 				obserList.add(o);
@@ -89,16 +90,16 @@ public class Operation {
 				errorMoveHereDateMap = ed2.getErrorMoveHereDate();
 				errorMoveToSomewhereDateMap = ed2.getErrorMoveToSomewhereDate();
 				
-				if (compMoveToSomewhereMap.isEmpty() && errorMoveToSomewhereDateMap.isEmpty()) {
+				/*if (compMoveToSomewhereMap.isEmpty() && errorMoveToSomewhereDateMap.isEmpty()) {
 					System.out.println("エラー無し");
 					//WriteRoomModel wrm = new WriteRoomModel(bleroomid, o);
-				} else {
+				} else {*/
 					// 自動更新プロセス
-					AutoUpdateModel aum = new AutoUpdateModel();
+					AutoUpdateModel aum = new AutoUpdateModel(dateInterval);
 					aum.setErrorData(compMoveHereMap, compMoveToSomewhereMap);
 					aum.selectProcess(bleroomid,wifiroomid, o);
 
-				}
+				//}
 			}
 		}
 	}

@@ -4,7 +4,6 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
@@ -18,9 +17,12 @@ public class AutoUpdateModel {
 	static String room = "";
 	static String wifiRoom = "";
 
+	static int dateInterval;
+	
 	static SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-	AutoUpdateModel() {
+	AutoUpdateModel(int dateInterval) {
+		this.dateInterval = dateInterval;
 	}
 
 	public void selectProcess(String room, String wifiRoom, Observation o) throws IOException {
@@ -32,28 +34,30 @@ public class AutoUpdateModel {
 			this.room = room;
 		}
 
-		// メンテナンス情報があるか
+		// 部屋のメンテナンス情報があるか
 		boolean bl = checkMentenanceFile();
 		if (bl == true) {
 			newCreateModel();
 			System.out.println("a");
-		} else {
-			standByProcessing();
+		} else if(room.equals(wifiRoom)){
+			WriteRoomModel wrm = new WriteRoomModel(room, o);
 			System.out.println("b");
+		}else{
+			standByProcessing();
+			System.out.println("c");
 		}
 	}
 
 	public static void newCreateModel() {
 		try {
 			File file = new File("mentenanceRoom.txt");
-			File file_SaveData = new File(room + "waitProcess.txt");
 
 			FileReader filereader = new FileReader(file);
 			boolean bl = checkSaveFile();
 
 			// 保存してあった観測データを削除
 			if (bl == true) {
-				file_SaveData.delete();
+				writeModel();
 				// 該当する部屋のエラー状況のデータを削除
 				deleteErrorFile();
 			}
@@ -86,12 +90,12 @@ public class AutoUpdateModel {
 
 	public static void standByProcessing() throws IOException {
 		// 待機処理があるか
-		if (checkWaitProcess() == true) {
+		if (checkMaybeDefect() == true) {
 			// 不具合が全て消えたか
 			boolean check = checkErrorDelete();
 			if (check == true) {
 				try {
-					BufferedReader br = new BufferedReader(new FileReader(new File("roomName" + "waitProcess.txt")));
+					BufferedReader br = new BufferedReader(new FileReader(new File("roomName" + "maybeDefect.txt")));
 					String str = "";
 					while ((str = br.readLine()) != null) {
 						StringTokenizer token;
@@ -115,21 +119,49 @@ public class AutoUpdateModel {
 				}
 			} else {
 				// 待機処理に観測データを追加
-				writeWaitProcess();
+				writemaybeDefect();
 				// 部屋ごとのエラー状況を保存
 				writeError();
 			}
 		} else {
 			// 待機処理に観測データを追加
-			writeWaitProcess();
+			writemaybeDefect();
 			// 部屋ごとのエラー状況を保存
 			writeError();
 		}
 	}
 
+	public static void writeModel(){
+		File file = new File(room + "maybeDefect.txt");
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String str = "";
+			while ((str = br.readLine()) != null) {
+				StringTokenizer token;
+				token = new StringTokenizer(str, ",");
+
+				String date = token.nextToken();
+				String roomName = token.nextToken();
+				String ble = token.nextToken();
+				String wifi = token.nextToken();
+
+				Observation o = new Observation();
+				o.setDateTime(date);
+				o.setRoomId(roomName);
+				o.setBLEObservation(ble);
+				o.setWifiObservation(wifi);
+
+				WriteRoomModel wrm = new WriteRoomModel(roomName, o);
+			}
+		} catch (IOException e) {
+			System.out.println(e.toString());
+		}
+		file.delete();
+	}
+		
 	public static void checkError() {
 		try {
-			File errorFile = new File(room + "waitProcess.txt");
+			File errorFile = new File(room + "maybeDefect.txt");
 			BufferedReader br = new BufferedReader(new FileReader(errorFile));
 			String str = "";
 			StringTokenizer token;
@@ -143,7 +175,7 @@ public class AutoUpdateModel {
 				long dateTimeFrom = date.getTime();
 				long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
 
-				if (dayDiff > 2) {
+				if (dayDiff > dateInterval) {
 					FileWriter fw = new FileWriter(new File(room + "tmpError.txt"), true);
 					fw.write(str);
 				}
@@ -158,12 +190,12 @@ public class AutoUpdateModel {
 		}
 	}
 
-	public static void writeWaitProcess() {
+	public static void writemaybeDefect() {
 		checkError();
 		try {
-			File waitProcess = new File(room + "waitProcess.txt");
+			File maybeDefect = new File(room + "maybeDefect.txt");
 			System.out.println("writeFile");
-			FileWriter fw = new FileWriter(waitProcess, true);
+			FileWriter fw = new FileWriter(maybeDefect, true);
 			fw.write(o.datetime + "," + room + "," + o.bleObservation + "," + o.wifiObservation + "\n");
 			fw.close();
 		} catch (IOException e) {
@@ -242,9 +274,9 @@ public class AutoUpdateModel {
 		}
 	}
 
-	public static boolean checkWaitProcess() {
+	public static boolean checkMaybeDefect() {
 		// ファイルチェック
-		File file = new File(room + "waitProcess.txt");
+		File file = new File(room + "maybeDefect.txt");
 		if (file.exists()) {
 			return true;
 		} else {
@@ -255,16 +287,34 @@ public class AutoUpdateModel {
 	public static boolean checkMentenanceFile() {
 		// ファイルチェック
 		File file = new File("mentenanceRoom.txt");
-		if (file.exists()) {
-			return true;
-		} else {
-			return false;
+		File tmpFile = new File("mentenance.txt");
+		boolean bl = false;
+		try{
+			BufferedReader br = new BufferedReader(new FileReader(file));
+			String str = "";
+			StringTokenizer token;
+			FileWriter fw = new FileWriter(tmpFile,true);
+			while ((str = br.readLine()) != null) {
+				token = new StringTokenizer(str, ",");
+				if(token.nextToken().equals(room)){
+					bl = true;
+				}else{
+					fw.write(str);
+				}
+			}
+			if(!tmpFile.exists()){
+				tmpFile.renameTo(file);
+			}
+		}catch(Exception e){
+			
 		}
+	
+		return bl;
 	}
 
 	public static boolean checkSaveFile() {
 		// ファイルチェック
-		File file = new File(room + "waitProcess.txt");
+		File file = new File(room + "maybeDefect.txt");
 		if (file.exists()) {
 			return true;
 		} else {

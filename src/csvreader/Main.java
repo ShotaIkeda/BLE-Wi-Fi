@@ -25,19 +25,20 @@ public class Main extends JFrame implements ActionListener {
 			"<html>観測できるはずなのに観測できない<br>&emsp;&emsp;(電池切れ・故障・持ち出し)" };
 
 	DefaultTableModel tableModel = new DefaultTableModel(columns, 0);
-
-	JButton buttonA = new JButton("RoomA");
-	JButton buttonB = new JButton("RoomB");
-	JButton buttonC = new JButton("RoomC");
-	JButton buttonD = new JButton("RoomD");
+	
+	JButton buttonMente = new JButton("メンテナンス");
 
 	int interval = 10000;
-	Operation o = new Operation();
+	
+	int dateInterval = 2;
+	Operation o = new Operation(dateInterval);
 
 	SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
 	Date date_moveHere;
 	Date date_moveToSomewhere;
+
+	JPanel p = new JPanel();
 
 	public static void main(String args[]) throws Exception {
 		Main frame = new Main("BLE Defects Detection");
@@ -65,25 +66,11 @@ public class Main extends JFrame implements ActionListener {
 		jh.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
 		jh.setBorder(new LineBorder(Color.BLACK));
 
-		// JButton buttonA = new JButton("RoomA");
-		buttonA.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
-		buttonA.addActionListener(this);
-		// JButton buttonB = new JButton("RoomB");
-		buttonB.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
-		buttonB.addActionListener(this);
-		// JButton buttonC = new JButton("RoomC");
-		buttonC.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
-		buttonC.addActionListener(this);
-		// JButton buttonD = new JButton("RoomD");
-		buttonD.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
-		buttonD.addActionListener(this);
-
-		JPanel p = new JPanel();
 		p.setLayout(new BoxLayout(p, BoxLayout.LINE_AXIS));
-		p.add(buttonA);
-		p.add(buttonB);
-		p.add(buttonC);
-		p.add(buttonD);
+
+		buttonMente.setFont(new Font(jh.getFont().getFamily(), Font.PLAIN, 20));
+		buttonMente.addActionListener(this);
+		p.add(buttonMente);
 
 		DefaultTableCellRenderer tableCellRenderer = new DefaultTableCellRenderer();
 		tableCellRenderer.setHorizontalAlignment(JLabel.CENTER);
@@ -136,7 +123,7 @@ public class Main extends JFrame implements ActionListener {
 								long dateTimeFrom = compDate.getTime();
 								long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
 
-								if (dayDiff > 2) {
+								if (dayDiff > dateInterval) {
 									if (j == 0) {
 										defect_label1 = "<html><font color=" + "RED" + ">"
 												+ errorMoveHereDateMap.get(moveHereDispList.get(j)) + "　ビーコン:"
@@ -182,7 +169,7 @@ public class Main extends JFrame implements ActionListener {
 								long dateTimeFrom = compDate.getTime();
 								long dayDiff = (dateTimeFrom - dateTimeTo) / (1000 * 60 * 60 * 24);
 
-								if (dayDiff > 2) {
+								if (dayDiff > dateInterval) {
 
 									if (j == 0) {
 										defect_label2 = "<html><font color=" + "RED" + ">"
@@ -226,14 +213,69 @@ public class Main extends JFrame implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
-		if (e.getSource() == buttonA) {
-			WriteMentenanceDate wrd = new WriteMentenanceDate("RoomA");
-		} else if (e.getSource() == buttonB) {
-			WriteMentenanceDate wrd = new WriteMentenanceDate("RoomB");
-		} else if (e.getSource() == buttonC) {
-			WriteMentenanceDate wrd = new WriteMentenanceDate("RoomC");
-		} else if (e.getSource() == buttonD) {
-			WriteMentenanceDate wrd = new WriteMentenanceDate("RoomD");
+		Update();
+		
+		String selectAnswer[] = {"いいえ","はい"};
+		String selectValues[] = { "RoomD", "RoomC", "RoomB", "RoomA" };
+		int selectNumber = -1;
+
+		if (e.getSource() == buttonMente) {
+			
+			int answerChose = JOptionPane.showOptionDialog(this, "不具合は発生していないですか？", "不具合の確認", JOptionPane.YES_NO_OPTION,
+					JOptionPane.QUESTION_MESSAGE, null, selectAnswer, selectAnswer[0]);
+			if (answerChose != JOptionPane.CLOSED_OPTION && selectAnswer[answerChose].equals("はい")) {
+				
+				int select = JOptionPane.showOptionDialog(this, "どの部屋のメンテナンスをしましたか？", "部屋メンテナンス", JOptionPane.YES_NO_OPTION,
+						JOptionPane.QUESTION_MESSAGE, null, selectValues, selectValues[0]);
+				if (select != JOptionPane.CLOSED_OPTION) {
+					selectNumber = select;
+				}
+			}
+		}
+
+		if (selectNumber != -1) {
+			TreeMap<String, ArrayList<String>> moveHereMap = o.getCompMoveHereMap();
+			TreeMap<String, ArrayList<String>> moveToSomewhereMap = o.getCompMoveToSomewhereMap();
+			
+			JLabel label;
+			
+			if (selectValues[selectNumber].equals("RoomA")) {
+				if(moveHereMap.get("RoomA") == null && moveToSomewhereMap.get("RoomA") == null){
+					WriteMentenanceDate wrd = new WriteMentenanceDate("RoomA");
+					label = new JLabel("メンテナンス終了");
+					JOptionPane.showMessageDialog(this, label);
+				}else{
+					label = new JLabel("不具合があります");
+					JOptionPane.showMessageDialog(this, label);
+				}
+			} else if (selectValues[selectNumber].equals("RoomB")) {
+				if(moveHereMap.get("RoomB") == null && moveToSomewhereMap.get("RoomB") == null){
+					WriteMentenanceDate wrd = new WriteMentenanceDate("RoomB");
+					label = new JLabel("メンテナンス終了");
+					JOptionPane.showMessageDialog(this, label);
+				}else{
+					label = new JLabel("不具合があります");
+					JOptionPane.showMessageDialog(this, label);
+				}
+			} else if (selectValues[selectNumber].equals("RoomC")) {
+				if(moveHereMap.get("RoomC") == null && moveToSomewhereMap.get("RoomC") == null){
+					WriteMentenanceDate wrd = new WriteMentenanceDate("RoomC");
+					label = new JLabel("メンテナンス終了");
+					JOptionPane.showMessageDialog(this, label);
+				}else{
+					label = new JLabel("不具合があります");
+					JOptionPane.showMessageDialog(this, label);
+				}
+			} else if (selectValues[selectNumber].equals("RoomD")) {
+				if(moveHereMap.get("RoomD") == null && moveToSomewhereMap.get("RoomD") == null){
+					WriteMentenanceDate wrd = new WriteMentenanceDate("RoomD");
+					label = new JLabel("メンテナンス終了");
+					JOptionPane.showMessageDialog(this, label);
+				}else{
+					label = new JLabel("不具合があります");
+					JOptionPane.showMessageDialog(this, label);
+				}
+			}
 		}
 	}
 }
